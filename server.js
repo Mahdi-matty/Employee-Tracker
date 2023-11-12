@@ -90,7 +90,11 @@ const addRole = ()=>{
             message: 'Which department that belongs?',
         }
     ]).then(answers=>{
-        db.query(`INSERT INTO role(title, salary, department_id) values $(rolename, salary, dpbelong)`)
+        const roleName = answers.rolename;
+        const roleSalary = answers.salary;
+        const dpBelong = answers.dpbelong;
+        db.query(`INSERT INTO role(title, salary, department_id) values(?, ?, ?)`,
+        [roleName, roleSalary, dpBelong])
     })
 };
 const addEpmployee = ()=>{
@@ -113,9 +117,19 @@ const addEpmployee = ()=>{
             message: 'What is the manager name?',
         }
     ]).then(answers=>{
-        db.query(`INSERT INTO employee(first_name, last_name, role_id, manager_id values $(firstname, lastname, role, manager))`)
+        const employeFirst = answers.firstname;
+        const employeLast = answers.lastname;
+        const employeRole = answers.role;
+        const employeManager = answers.manager;
+        const roleId = getRoleIdByName(employeeRole);
+        const managerId = getManagerIdByName(employeeManager);
+        db.query(`INSERT INTO employee(first_name, last_name, role_id, manager_id values VALUES (?, ?, ?, ?)`,
+        [employeFirst, employeLast, roleId, managerId])
     })
 };
+const getManagerIdByName= (managerName)=>{};
+const getRoleIdByName = (roleName) =>{}
+const getEmployeeIdByName= (employeeName)=>{}
 const updateRole = ()=>{
     inquirer.prompt([
         {
@@ -142,6 +156,4 @@ const updateRole = ()=>{
             }
     })
 })};
-const getRoleIdByName = (roleName) =>{}
-const getEmployeeIdByName= (employeeName)=>{}
 fillDepartment();
