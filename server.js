@@ -1,12 +1,11 @@
-const express = require('express');
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 
-const PORT = process.env.PORT || 3001;
-const app = express();
+// const PORT = process.env.PORT || 3001;
+// const app = express();
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+// app.use(express.urlencoded({ extended: false }));
+// app.use(express.json());
 
 
 const db = mysql.createConnection(
@@ -120,13 +119,29 @@ const addEpmployee = ()=>{
 const updateRole = ()=>{
     inquirer.prompt([
         {
-            type: 'input',
-            name: 'dpname',
-            message: 'What is the department name?',
-            choices: [`$(viewEmployees)`]
+            type: 'list',
+            name: 'whichem',
+            message: 'Which employee?',
+            choices: viewEmployees,
+        },{
+            type: 'checkbox',
+            name: 'newrole',
+            message: 'What is the new role?',
+            choices: viewRoles,
         },
     ]).then(answers=>{
-        
+        const employeeName = answers.whichem;
+        const newRoleName = answers.newrole;
+        const newRoleId = getRoleIdByName(newRoleName);
+        const employeeId = getEmployeeIdByName(employeeName);
+        db.query(`UPDATE employee SET role_id = ${newRoleId} WHERE id = ${employeeId}`, (error, results) => {
+            if (error) {
+                console.error('Error updating role:', error);
+            } else {
+                console.log('Role updated successfully.');
+            }
     })
-}
-  
+})};
+const getRoleIdByName = (roleName) =>{}
+const getEmployeeIdByName= (employeeName)=>{}
+fillDepartment();
