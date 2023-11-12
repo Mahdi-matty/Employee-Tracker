@@ -14,16 +14,16 @@ CREATE TABLE role (
     salary decimal NOT NULL;
     department_id INT NOT NULL;
     FOREIGN KEY (department_id)
-    REFERENCES book_prices(id)
+    REFERENCES department(id)
 
 );
 
 CREATE TABLE employee (
-    id INT NOT NULL;
+    id INT NOT NULL AUTO_INCREMENT primary KEY;
     first_name varchar(30) not NULL;
     last_name varchar(30) NOT NULL;
     role_id INT NOT NULL;
     FOREIGN KEY (role_id)
-    REFERENCES book_prices(id)
+    REFERENCES role(id)
     manager_id INT NOT NULL;
 );
