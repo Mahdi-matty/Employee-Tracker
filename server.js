@@ -71,7 +71,9 @@ const addDepartment = ()=>{
 
         }
     ]).then(answers=>{
-        db.query(`INSERT INTO department(department_name) values $(dpname) `)
+        const dpName = answers.dpname;
+        db.query(`INSERT INTO department(department_name) values (?)`,
+        [dpName])
     })
 };
 const addRole = ()=>{
@@ -128,7 +130,18 @@ const addEpmployee = ()=>{
     })
 };
 const getManagerIdByName= (managerName)=>{};
-const getRoleIdByName = (roleName) =>{}
+const getRoleIdByName = (roleName, callback) => {
+    
+    db.query('SELECT id FROM role WHERE title = ?', [roleName], (error, results) => {
+        if (error) {
+            console.error('Error executing query:', error);
+            callback(error, null);
+        } else {
+            const roleId = results.length > 0 ? results[0].id : null;
+            callback(null, roleId);
+        }
+    });
+};
 const getEmployeeIdByName= (employeeName)=>{}
 const updateRole = ()=>{
     inquirer.prompt([
