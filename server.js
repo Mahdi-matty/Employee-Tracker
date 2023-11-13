@@ -1,18 +1,11 @@
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 
-// const PORT = process.env.PORT || 3001;
-// const app = express();
-
-// app.use(express.urlencoded({ extended: false }));
-// app.use(express.json());
-
 
 const db = mysql.createConnection(
     {
       host: 'localhost',
       user: 'root',
-      // TODO: Add MySQL password here
       password: '1990',
       database: 'cms_db'
     },
@@ -53,6 +46,30 @@ const fillDepartment = inquirer.prompt([
             break;
     }
 });
+const getRoleIdByName = (roleName, callback) => {
+    
+    db.query('SELECT id FROM role WHERE title = ?', [roleName], (error, results) => {
+        if (error) {
+            console.error('Error executing query:', error);
+            callback(error, null);
+        } else {
+            const roleId = results.length > 0 ? results[0].id : null;
+            callback(null, roleId);
+        }
+    });
+};
+const getEmployeeIdByName= (employeeName, callback)=>{
+    db.query('SELECT id FROM employee WHERE first_name = ?', [employeeName], (error, result)=>{
+        if(error){
+            console.error('Error executing query:', error);
+            callback(error, null);
+        } else {
+            const employeeId = results.length > 0 ? results[0].id : null;
+            callback(null, employeeId);
+        }
+    })
+}
+const getManagerIdByName= (managerName)=>{};
 const viewDepartment = ()=>{
     db.query('SELECT * FROM department')
 };
@@ -60,7 +77,7 @@ const viewRoles = ()=>{
     db.query('SELECT * FROM role')
 };
 const viewEmployee = ()=>{
-    db.query('SELECT * FROM epmloyee')
+    db.query('SELECT * FROM employee')
 };
 const addDepartment = ()=>{
     inquirer.prompt([
@@ -125,24 +142,10 @@ const addEpmployee = ()=>{
         const employeManager = answers.manager;
         const roleId = getRoleIdByName(employeeRole);
         const managerId = getManagerIdByName(employeeManager);
-        db.query(`INSERT INTO employee(first_name, last_name, role_id, manager_id values VALUES (?, ?, ?, ?)`,
+        db.query(`INSERT INTO employee(first_name, last_name, role_id, manager_id  VALUES (?, ?, ?, ?)`,
         [employeFirst, employeLast, roleId, managerId])
     })
 };
-const getManagerIdByName= (managerName)=>{};
-const getRoleIdByName = (roleName, callback) => {
-    
-    db.query('SELECT id FROM role WHERE title = ?', [roleName], (error, results) => {
-        if (error) {
-            console.error('Error executing query:', error);
-            callback(error, null);
-        } else {
-            const roleId = results.length > 0 ? results[0].id : null;
-            callback(null, roleId);
-        }
-    });
-};
-const getEmployeeIdByName= (employeeName)=>{}
 const updateRole = ()=>{
     inquirer.prompt([
         {
