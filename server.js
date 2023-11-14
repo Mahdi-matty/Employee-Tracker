@@ -10,17 +10,23 @@ const db = mysql.createConnection(
       database: 'cms_db'
     },
 );
+db.connect((err) => {
+    if (err) throw err;
+    console.log('Connected to the database');
+    startApp();
+  });
+  
 // 
 
-const fillDepartment = inquirer.prompt([
-    {type: 'checkbox',
+const startApp = inquirer.prompt([
+    {type: 'list',
       message: 'choose on of the following?',
       name: 'optional',
       choices: ['view all the department', 'view all roles', 'view all employees', 'add a department', 'add a role', 'add an employee', 'update an employee roll'],
     }
   
 ]).then(answers=>{
-    switch(answers.optional){
+    switch (answers.optional){
         case 'view all the department':
             viewDepartment();
             break;
@@ -44,41 +50,38 @@ const fillDepartment = inquirer.prompt([
         case 'update an employee roll' :
             updateRole();
             break;
+            case 'Exit':
+          console.log('Exiting the application.');
+          db.end();
+          break;
+
+        default:
+          console.log('Invalid option. Please try again.');
+          startApp();
     }
 });
-const getRoleIdByName = (roleName, callback) => {
-    
-    db.query('SELECT id FROM role WHERE title = ?', [roleName], (error, results) => {
-        if (error) {
-            console.error('Error executing query:', error);
-            callback(error, null);
-        } else {
-            const roleId = results.length > 0 ? results[0].id : null;
-            callback(null, roleId);
-        }
-    });
-};
-const getEmployeeIdByName= (employeeName, callback)=>{
-    db.query('SELECT id FROM employee WHERE first_name = ?', [employeeName], (error, result)=>{
-        if(error){
-            console.error('Error executing query:', error);
-            callback(error, null);
-        } else {
-            const employeeId = results.length > 0 ? results[0].id : null;
-            callback(null, employeeId);
-        }
-    })
-}
-const getManagerIdByName= (managerName)=>{};
+
 const viewDepartment = ()=>{
-    db.query('SELECT * FROM department')
-};
+    db.query('SELECT * FROM role', (err, results) => {
+        if (err) throw err;
+        console.table(results);
+        startApp();
+      });
+    };
 const viewRoles = ()=>{
-    db.query('SELECT * FROM role')
-};
+    db.query('SELECT * FROM role', (err, results) => {
+        if (err) throw err;
+        console.table(results);
+        startApp();
+      });
+    };
 const viewEmployee = ()=>{
-    db.query('SELECT * FROM employee')
-};
+    db.query('SELECT * FROM employee', (err, results) => {
+        if (err) throw err;
+        console.table(results);
+        startApp();
+      });
+    };
 const addDepartment = ()=>{
     inquirer.prompt([
         {
@@ -89,10 +92,13 @@ const addDepartment = ()=>{
         }
     ]).then(answers=>{
         const dpName = answers.dpname;
-        db.query(`INSERT INTO department(department_name) values (?)`,
-        [dpName])
-    })
-};
+        db.query('INSERT INTO department (department_name) VALUES (?)', [dpName], (err) => {
+            if (err) throw err;
+            console.log('Department added successfully.');
+            startApp();
+          });
+        });
+    };
 const addRole = ()=>{
     inquirer.prompt([
         {
@@ -105,17 +111,33 @@ const addRole = ()=>{
             message: 'how much is the role salary?',
         },{
             type: 'input',
-            name: 'dpbelobg',
+            name: 'dpbelong',
             message: 'Which department that belongs?',
         }
     ]).then(answers=>{
         const roleName = answers.rolename;
         const roleSalary = answers.salary;
         const dpBelong = answers.dpbelong;
-        db.query(`INSERT INTO role(title, salary, department_id) values(?, ?, ?)`,
-        [roleName, roleSalary, dpBelong])
-    })
-};
+        db.query('SELECT id FROM department WHERE department_name = ?', [dpBelong], (err, results) => {
+            if (err) throw err;
+      
+            if (results.length > 0) {
+              const departmentId = results[0].id;
+              // Insert the role with the obtained department ID
+              db.query('INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)',
+                [roleName, roleSalary, departmentId], (err) => {
+                  if (err) throw err;
+                  console.log('Role added successfully.');
+                  startApp();
+                });
+            } else {
+              console.log('Department not found.');
+              startApp();
+            }
+          });
+        });
+      };
+      
 const addEpmployee = ()=>{
     inquirer.prompt([
         {
@@ -139,37 +161,64 @@ const addEpmployee = ()=>{
         const employeFirst = answers.firstname;
         const employeLast = answers.lastname;
         const employeRole = answers.role;
-        const employeManager = answers.manager;
-        const roleId = getRoleIdByName(employeeRole);
-        const managerId = getManagerIdByName(employeeManager);
-        db.query(`INSERT INTO employee(first_name, last_name, role_id, manager_id  VALUES (?, ?, ?, ?)`,
-        [employeFirst, employeLast, roleId, managerId])
-    })
-};
+        const employeManager = answers.manager;    
+            db.query('SELECT id FROM role WHERE title = ?', [employeRole], (err, results) => {
+                if (err) throw err;
+          
+                if (results.length > 0) {
+                  const roleId = results[0].id;
+                  // Insert the employee with the obtained role ID
+                  db.query('INSERT INTO employee (first_name, last_name, role_id, manager) VALUES (?, ?, ?, ?)',
+                    [employeFirst, employeLast, roleId, employeManager], (err) => {
+                      if (err) throw err;
+                      console.log('Employee added successfully.');
+                      startApp();
+                    });
+                } else {
+                  console.log('Role not found.');
+                  startApp();
+                }});
+            })}
+          
 const updateRole = ()=>{
-    inquirer.prompt([
-        {
-            type: 'list',
-            name: 'whichem',
-            message: 'Which employee?',
-            choices: viewEmployees,
-        },{
-            type: 'checkbox',
-            name: 'newrole',
-            message: 'What is the new role?',
-            choices: viewRoles,
-        },
-    ]).then(answers=>{
-        const employeeName = answers.whichem;
-        const newRoleName = answers.newrole;
-        const newRoleId = getRoleIdByName(newRoleName);
-        const employeeId = getEmployeeIdByName(employeeName);
-        db.query(`UPDATE employee SET role_id = ${newRoleId} WHERE id = ${employeeId}`, (error, results) => {
-            if (error) {
-                console.error('Error updating role:', error);
-            } else {
-                console.log('Role updated successfully.');
-            }
-    })
-})};
-fillDepartment();
+    db.query('SELECT id, first_name, last_name FROM employee', (err, employees) => {
+        if (err) throw err;
+        const employeeChoices = employees.map((employee) => ({
+            name: `${employee.first_name} ${employee.last_name}`,
+            value: employee.id,
+          }));
+          inquirer.prompt([
+            {
+              type: 'list',
+              name: 'employeeId',
+              message: 'Select the employee to update:',
+              choices: employeeChoices,
+            },
+            {
+              type: 'input',
+              name: 'newRoleName',
+              message: 'Enter the new role for the employee:',
+            },
+          ]).then((answers) => {
+            // Fetch the new role ID based on the entered role name
+            db.query('SELECT id FROM role WHERE title = ?', [answers.newRoleName], (err, results) => {
+              if (err) throw err;
+      
+              if (results.length > 0) {
+                const newRoleId = results[0].id;
+      
+                // Update the employee's role with the obtained new role ID
+                db.query('UPDATE employee SET role_id = ? WHERE id = ?',
+                  [newRoleId, answers.employeeId], (err) => {
+                    if (err) throw err;
+                    console.log('Employee role updated successfully.');
+                    startApp();
+                  });
+              } else {
+                console.log('New role not found.');
+                startApp();
+              }
+            });
+          });
+        });
+      };
